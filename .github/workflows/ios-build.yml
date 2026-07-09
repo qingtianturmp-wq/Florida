@@ -24,7 +24,7 @@ jobs:
         done
         cd ..
         mkdir build-ios && cd build-ios
-        ../frida/configure --host=ios-arm64 -- -Dfrida-core:compat=disabled || ../frida/configure --host=ios-arm64
+        ../frida/configure --host=ios-arm64
         make -j4
     - name: sign & collect
       run: |
