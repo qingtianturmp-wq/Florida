@@ -12,6 +12,7 @@ jobs:
         python3 -m pip install --break-system-packages requests setuptools lief 2>/dev/null || pip3 install requests setuptools lief || true
     - name: build frida iOS (Florida patched)
       run: |
+        export IOS_CERTID=-
         git config --global user.name CI; git config --global user.email ci@ci.com
         git clone --recurse-submodules https://github.com/frida/frida
         cd frida
