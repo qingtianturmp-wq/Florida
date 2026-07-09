@@ -10,18 +10,15 @@ jobs:
       run: |
         brew install ldid coreutils cmake ninja || true
         python3 -m pip install --break-system-packages requests setuptools lief 2>/dev/null || pip3 install requests setuptools lief || true
-    - name: build frida iOS (Florida patched)
+    - name: build frida iOS (safe stealth patches only)
       run: |
         export IOS_CERTID=-
         git config --global user.name CI; git config --global user.email ci@ci.com
         git clone --recurse-submodules https://github.com/frida/frida
         cd frida
-        for path in ../patches/*; do
-          name=$(basename $path)
-          if [ -d "subprojects/$name" ]; then
-            (cd subprojects/$name && (git am ../../../patches/$name/*.patch || (git am --abort; echo "SKIP $name")))
-          fi
-        done
+        # 只打安全的线程/池名隐藏patch(不改agent符号/协议, 保spawn)
+        (cd subprojects/frida-core && for p in ../../../patches/frida-core/0004*.patch ../../../patches/frida-core/0005*.patch ../../../patches/frida-core/0008*.patch; do git am "$p" || git am --abort; done)
+        (cd subprojects/frida-gum && for p in ../../../patches/frida-gum/*.patch; do git am "$p" || git am --abort; done)
         cd ..
         mkdir build-ios && cd build-ios
         ../frida/configure --host=ios-arm64
@@ -31,8 +28,7 @@ jobs:
         printf '%s' '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>get-task-allow</key><true/><key>task_for_pid-allow</key><true/><key>platform-application</key><true/><key>com.apple.private.security.no-container</key><true/></dict></plist>' > ent.plist
         FS=$(find build-ios -name frida-server -type f | head -1); echo "found: $FS"
         ldid -Sent.plist "$FS" || true
-        cp "$FS" ./frida-server-ios-arm64
-        ls -la frida-server-ios-arm64
+        cp "$FS" ./frida-server-ios-arm64; ls -la frida-server-ios-arm64
     - uses: actions/upload-artifact@v4
       with:
         name: frida-server-ios-arm64
